@@ -19,6 +19,15 @@ const DashboardView = ({ teams, getTeamTheme, getTeamIcon, getAgentPhoto }: Dash
     acc + team.agents.reduce((sum, agent) => sum + agent.sales, 0), 0
   );
 
+  // Calcular el porcentaje dinámico basado en el total vs la meta
+  const goalTotal = teams.reduce((acc, team) => acc + (team.goal || 50000), 0);
+  const progressPercentage = goalTotal > 0 
+    ? Math.round((grandTotal / goalTotal) * 100) 
+    : 0;
+  const percentageChange = progressPercentage >= 100 
+    ? `+${progressPercentage - 100}%` 
+    : `${progressPercentage}%`;
+
   return (
     <div className="h-screen w-screen relative font-sans text-white overflow-hidden flex flex-col">
       <SpaceBackground />
@@ -86,11 +95,11 @@ const DashboardView = ({ teams, getTeamTheme, getTeamIcon, getAgentPhoto }: Dash
           </div>
         </div>
         
-        {/* DERECHA: Stats */}
+        {/* DERECHA: Stats - Porcentaje calculado dinámicamente */}
         <div className="w-1/3 flex justify-end">
           <div className="bg-[#2d1b4e]/90 backdrop-blur-xl px-8 py-3 rounded-3xl border-4 border-purple-500/30 flex items-center gap-3 shadow-2xl transform scale-90 origin-right">
             <TrendingUp className="w-8 h-8 text-emerald-400" />
-            <span className="text-3xl font-black text-emerald-400 drop-shadow-md">+12%</span>
+            <span className="text-3xl font-black text-emerald-400 drop-shadow-md">{percentageChange}</span>
           </div>
         </div>
       </div>

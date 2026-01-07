@@ -7,6 +7,7 @@ import {
   getTeamIcon,
   getAgentCelebrationSong 
 } from "@/config/agents.config";
+import { CONFIG } from "@/config/constants";
 
 // Componentes separados
 import SpaceBackground from "@/components/SpaceBackground";
@@ -14,81 +15,137 @@ import StartScreen from "@/components/StartScreen";
 import DashboardView from "@/components/DashboardView";
 import JackpotOverlay from "@/components/JackpotOverlay";
 
+interface QueuedSale {
+  agent: Agent;
+  amount: number;
+}
+
 const Index = () => {
   // --- ESTADO ---
-  const { teams, loading, error, saleChange, clearSaleChange, refetch } = useGoogleSheetData(10000);
+  const { teams, loading, error, saleChange, clearSaleChange, refetch } = useGoogleSheetData(CONFIG.POLLING_INTERVAL);
   const [hasStarted, setHasStarted] = useState(false);
   const [jackpotActive, setJackpotActive] = useState(false);
   const [celebratingAgent, setCelebratingAgent] = useState<Agent | null>(null);
   const [saleAmount, setSaleAmount] = useState(0);
   
-  // Referencias para Audio y Temporizador (Cruciales para evitar errores)
+  // Referencias para Audio, Temporizador y Cola
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const saleQueueRef = useRef<QueuedSale[]>([]);
+  const isProcessingRef = useRef(false);
 
-  // --- EFECTO DE JACKPOT ROBUSTO (CORREGIDO) ---
-  useEffect(() => {
-    // Si no hay venta nueva, salimos
-    if (!saleChange) return;
+  // URL de canción por defecto
+  const DEFAULT_SONG_URL = "https://assets.mixkit.co/active_storage/sfx/1934/1934-preview.mp3";
 
-    // 1. Configurar datos de la celebración
-    setCelebratingAgent(saleChange.agent);
-    setSaleAmount(saleChange.amount);
+  // --- FUNCIÓN PARA PROCESAR LA COLA ---
+  const processNextSale = useRef(() => {
+    // Si ya estamos procesando o no hay ventas en cola, salir
+    if (isProcessingRef.current || saleQueueRef.current.length === 0) {
+      return;
+    }
+
+    const nextSale = saleQueueRef.current.shift();
+    if (!nextSale) return;
+
+    isProcessingRef.current = true;
+
+    // Configurar datos de la celebración
+    setCelebratingAgent(nextSale.agent);
+    setSaleAmount(nextSale.amount);
     setJackpotActive(true);
 
-    // 2. Detener audio anterior si existe (para evitar superposición)
+    // Detener audio anterior si existe
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current = null;
     }
 
-    // 3. Obtener URL y Crear Audio
-    const songUrl = getAgentCelebrationSong(saleChange.agent.name);
-    console.log(`🎵 Intentando reproducir para ${saleChange.agent.name}:`, songUrl);
+    // Obtener URL y Crear Audio
+    const songUrl = getAgentCelebrationSong(nextSale.agent.name);
+    console.log(`🎵 Intentando reproducir para ${nextSale.agent.name}:`, songUrl);
 
-    const audio = new Audio(songUrl);
+    // Validar que la URL no esté vacía
+    const validSongUrl = songUrl && songUrl.trim() !== "" ? songUrl : DEFAULT_SONG_URL;
+    
+    if (!songUrl || songUrl.trim() === "") {
+      console.warn(`⚠️ No hay canción configurada para ${nextSale.agent.name}, usando canción por defecto`);
+    }
+
+    const audio = new Audio(validSongUrl);
     audio.volume = 0.8;
-    audio.loop = false; // No loop, queremos que termine naturalmente o a los 30s
-    audioRef.current = audio; // Guardamos referencia
+    audio.loop = false;
+    audioRef.current = audio;
 
-    // 4. Reproducir (Manejo de promesas seguro)
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise.then(() => {
+    // Manejo robusto de reproducción de audio
+    const playAudio = async () => {
+      try {
+        await audio.play();
         console.log("✅ Audio iniciado correctamente");
-      }).catch((error) => {
+      } catch (error: unknown) {
         console.error("❌ Error de audio:", error);
-        // Si falla, intentar reproducir sonido genérico de respaldo
-        if (error.name === "NotAllowedError" || error.name === "NotSupportedError") {
-           const backup = new Audio("https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3");
-           backup.volume = 0.6;
-           backup.play().catch(e => console.log("Backup falló:", e));
-           audioRef.current = backup;
+        
+        // Intentar reproducir sonido genérico de respaldo
+        try {
+          const backup = new Audio(DEFAULT_SONG_URL);
+          backup.volume = 0.6;
+          await backup.play();
+          audioRef.current = backup;
+          console.log("✅ Audio de respaldo iniciado");
+        } catch (backupError) {
+          console.error("❌ Error con audio de respaldo:", backupError);
+          // Si todo falla, continuamos sin audio pero mostramos la animación
+          audioRef.current = null;
         }
-      });
-    }
+      }
+    };
 
-    // 5. Limpiamos la venta para que el polling siga funcionando
-    clearSaleChange();
+    playAudio();
 
-    // 6. Temporizador para cerrar todo (30 segundos)
+    // Temporizador para cerrar la celebración después de 7 segundos
     if (timerRef.current) clearTimeout(timerRef.current);
     
     timerRef.current = setTimeout(() => {
-      console.log("⏰ Tiempo cumplido: Cerrando Jackpot");
+      console.log("⏰ Tiempo cumplido (7s): Cerrando Jackpot");
       setJackpotActive(false);
       setCelebratingAgent(null);
       
-      // Detener audio suavemente al terminar el tiempo
+      // Detener audio suavemente
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
+        audioRef.current = null;
       }
-    }, 30000);
 
-    // --- IMPORTANTE: NO PAUSAR AUDIO AQUÍ ---
-    // Eliminamos la limpieza automática del audio aquí para evitar el "AbortError"
-    
+      // Marcar que terminamos de procesar
+      isProcessingRef.current = false;
+
+      // Procesar siguiente venta en cola si existe (con delay de 500ms)
+      setTimeout(() => {
+        processNextSale.current();
+      }, 500);
+    }, CONFIG.JACKPOT_DURATION);
+  });
+
+  // --- EFECTO PARA AGREGAR VENTAS A LA COLA ---
+  useEffect(() => {
+    if (!saleChange) return;
+
+    // Agregar venta a la cola
+    saleQueueRef.current.push({
+      agent: saleChange.agent,
+      amount: saleChange.amount,
+    });
+
+    console.log(`📦 Venta agregada a la cola. Cola actual: ${saleQueueRef.current.length} ventas`);
+
+    // Limpiar la venta del hook para que el polling siga funcionando
+    clearSaleChange();
+
+    // Si no estamos procesando nada, procesar inmediatamente
+    if (!isProcessingRef.current) {
+      processNextSale.current();
+    }
   }, [saleChange, clearSaleChange]);
 
   // --- EFECTO DE LIMPIEZA GLOBAL (Solo al cerrar la página) ---
@@ -97,7 +154,10 @@ const Index = () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current = null;
       }
+      saleQueueRef.current = [];
+      isProcessingRef.current = false;
     };
   }, []);
 
@@ -107,7 +167,7 @@ const Index = () => {
     document.documentElement.requestFullscreen().catch(() => {});
     
     // TRUCO: Desbloquear el contexto de audio
-    const unlockAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3");
+    const unlockAudio = new Audio(DEFAULT_SONG_URL);
     unlockAudio.volume = 0;
     unlockAudio.play().then(() => {
       unlockAudio.pause();
@@ -135,7 +195,12 @@ const Index = () => {
     );
   }
 
-  // 3. Jackpot Activo
+  // 3. Mostrar error si existe (opcional - puedes mejorarlo visualmente)
+  if (error) {
+    console.error("Error en la aplicación:", error);
+  }
+
+  // 4. Jackpot Activo
   if (jackpotActive && celebratingAgent) {
     return (
       <div className="relative h-screen w-screen overflow-hidden">
@@ -150,7 +215,7 @@ const Index = () => {
     );
   }
 
-  // 4. Vista Principal (Dashboard)
+  // 5. Vista Principal (Dashboard)
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-transparent">
       
