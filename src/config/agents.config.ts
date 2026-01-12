@@ -18,7 +18,8 @@ export const AGENT_PHOTOS: Record<string, string> = {
   "Heiner Ramirez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Heiner.png?alt=media&token=3572ba43-81a4-4e2e-933b-6e5a06b02ac0",
   "Leomelly Alvarez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/leo.png?alt=media&token=bd30e2ad-61c5-4b2f-8ad1-9f0130c96159",
   "Samanta Rous": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Sama.png?alt=media&token=3eb64230-e132-4b25-8c7a-f8de3f3b6314",
-  "Emanuel Garcia": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Ema.png?alt=media&token=dc22751c-510a-45fa-9590-aaf9da665943"
+  "Emanuel Garcia": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Ema.png?alt=media&token=dc22751c-510a-45fa-9590-aaf9da665943",
+  "Camila Hernandez": "/imagenes/Camila%20Hernandez.png"
 };
 
 // ========== 🎵 CANCIONES DE CELEBRACIÓN (30 segundos cada una) ==========
@@ -35,7 +36,7 @@ export const AGENT_CELEBRATION_SONGS: Record<string, string> = {
   "Camila Hernandez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
   "Giann Carlos": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMGiann.mp3?alt=media&token=51f5a756-8715-4356-be5d-b1199cd70dc1",
   "Isadora Cruz": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
-  "Ismael Lopez": "",
+  "Ismael Lopez": "https://assets.mixkit.co/active_storage/sfx/1934/1934-preview.mp3",
   "Juan de Dios": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMjuand.mp3?alt=media&token=e428e85a-6b72-4d19-be40-03f6f31b583d",
   "Mariano Campuzano": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
   "Maylo Villalobos": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
@@ -89,8 +90,34 @@ export const TEAM_THEMES: TeamTheme[] = [
 // ========== HELPERS ==========
 
 // Helper para obtener foto del agente con fallback
+// Si hay una ruta local en el código (AGENT_PHOTOS), siempre la usa primero
+// Luego busca en localStorage (configuración dinámica), y finalmente fallback
 export const getAgentPhoto = (agentName: string, fallbackAvatar: string): string => {
-  return AGENT_PHOTOS[agentName] || fallbackAvatar;
+  // PRIORIDAD 1: Si hay una ruta local definida en el código, usarla siempre
+  const defaultPhoto = AGENT_PHOTOS[agentName];
+  if (defaultPhoto && defaultPhoto.startsWith('/imagenes/')) {
+    // Codificar espacios y otros caracteres especiales en la URL
+    const encodedPath = defaultPhoto.replace(/ /g, '%20');
+    return encodedPath;
+  }
+  
+  // PRIORIDAD 2: Intentar obtener de localStorage (configuración dinámica)
+  // Solo si NO hay ruta local en el código
+  try {
+    const stored = localStorage.getItem("agent_configs");
+    if (stored) {
+      const configs = JSON.parse(stored);
+      // Solo usar foto de localStorage si existe y no está vacía
+      if (configs[agentName]?.photo && configs[agentName].photo.trim() !== "") {
+        return configs[agentName].photo;
+      }
+    }
+  } catch {
+    // Si falla, continuar con valores por defecto
+  }
+  
+  // PRIORIDAD 3: Usar valores por defecto del código (URLs externas) o fallback
+  return defaultPhoto || fallbackAvatar;
 };
 
 // Helper para obtener tema por índice (con ciclo automático)
@@ -99,11 +126,41 @@ export const getTeamTheme = (index: number): TeamTheme => {
 };
 
 // Helper para obtener ícono de equipo
+// Primero busca en configuración dinámica, luego en valores por defecto
 export const getTeamIcon = (index: number): string => {
+  // Intentar obtener de localStorage (configuración dinámica)
+  try {
+    const stored = localStorage.getItem("team_icons");
+    if (stored) {
+      const icons = JSON.parse(stored);
+      if (icons.length > 0 && icons[index]) {
+        return icons[index];
+      }
+    }
+  } catch {
+    // Si falla, continuar con valores por defecto
+  }
+  
+  // Usar valores por defecto
   return TEAM_ICONS[index % TEAM_ICONS.length];
 };
 
 // 🎵 Helper para obtener la canción de celebración del agente
+// Primero busca en configuración dinámica, luego en valores por defecto
 export const getAgentCelebrationSong = (agentName: string): string => {
+  // Intentar obtener de localStorage (configuración dinámica)
+  try {
+    const stored = localStorage.getItem("agent_configs");
+    if (stored) {
+      const configs = JSON.parse(stored);
+      if (configs[agentName]?.song && configs[agentName].song.trim() !== "") {
+        return configs[agentName].song;
+      }
+    }
+  } catch {
+    // Si falla, continuar con valores por defecto
+  }
+  
+  // Usar valores por defecto
   return AGENT_CELEBRATION_SONGS[agentName] || DEFAULT_CELEBRATION_SONG;
 };

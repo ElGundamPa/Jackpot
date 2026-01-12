@@ -1,13 +1,35 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Leer URL del Apps Script desde variable de entorno
+const APPS_SCRIPT_URL = Deno.env.get('APPS_SCRIPT_URL') || 
+  "https://script.google.com/macros/s/AKfycbxIsEEFQefXl9YAccQ3oJj99F-EIXhoTdHD6idvf_YkrlSurzlPvY1JVL6vLRo-VwMmUw/exec";
+
+// Leer orígenes permitidos desde variable de entorno (separados por coma)
+// Si no está configurado, usa '*' como fallback (menos seguro pero funcional)
+const allowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || ['*'];
+
+// Función para obtener el origen permitido basado en el request
+const getCorsOrigin = (requestOrigin: string | null): string => {
+  if (allowedOrigins.includes('*')) {
+    return '*';
+  }
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+  // Si no coincide, devolver el primer origen permitido o '*'
+  return allowedOrigins[0] || '*';
 };
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxIsEEFQefXl9YAccQ3oJj99F-EIXhoTdHD6idvf_YkrlSurzlPvY1JVL6vLRo-VwMmUw/exec";
+const getCorsHeaders = (requestOrigin: string | null) => ({
+  'Access-Control-Allow-Origin': getCorsOrigin(requestOrigin),
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+});
 
 serve(async (req) => {
+  const requestOrigin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(requestOrigin);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });

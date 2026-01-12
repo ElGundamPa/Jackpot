@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useGoogleSheetData } from "@/hooks/useGoogleSheetData";
 import { Agent } from "@/data/mockData";
 import { 
@@ -8,6 +8,7 @@ import {
   getAgentCelebrationSong 
 } from "@/config/agents.config";
 import { CONFIG } from "@/config/constants";
+import "@/utils/testUtils"; // Cargar utilidades de testing
 
 // Componentes separados
 import SpaceBackground from "@/components/SpaceBackground";
@@ -31,6 +32,8 @@ const Index = () => {
   // Referencias para Audio, Temporizador y Cola
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const fadeOutIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const fadeOutTimerRef = useRef<NodeJS.Timeout | null>(null);
   const saleQueueRef = useRef<QueuedSale[]>([]);
   const isProcessingRef = useRef(false);
 
@@ -38,7 +41,7 @@ const Index = () => {
   const DEFAULT_SONG_URL = "https://assets.mixkit.co/active_storage/sfx/1934/1934-preview.mp3";
 
   // --- FUNCIÓN PARA PROCESAR LA COLA ---
-  const processNextSale = useRef(() => {
+  const processNextSale = useCallback(() => {
     // Si ya estamos procesando o no hay ventas en cola, salir
     if (isProcessingRef.current || saleQueueRef.current.length === 0) {
       return;
@@ -54,30 +57,40 @@ const Index = () => {
     setSaleAmount(nextSale.amount);
     setJackpotActive(true);
 
-    // Detener audio anterior si existe
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    }
+        // Detener audio anterior si existe
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current = null;
+        }
+        
+        // Limpiar timers de fade out anteriores
+        if (fadeOutTimerRef.current) {
+          clearTimeout(fadeOutTimerRef.current);
+          fadeOutTimerRef.current = null;
+        }
+        if (fadeOutIntervalRef.current) {
+          clearInterval(fadeOutIntervalRef.current);
+          fadeOutIntervalRef.current = null;
+        }
 
-    // Obtener URL y Crear Audio
-    const songUrl = getAgentCelebrationSong(nextSale.agent.name);
-    console.log(`🎵 Intentando reproducir para ${nextSale.agent.name}:`, songUrl);
+        // Obtener URL y validar
+        const songUrl = getAgentCelebrationSong(nextSale.agent.name);
+        console.log(`🎵 Intentando reproducir para ${nextSale.agent.name}:`, songUrl);
 
-    // Validar que la URL no esté vacía
-    const validSongUrl = songUrl && songUrl.trim() !== "" ? songUrl : DEFAULT_SONG_URL;
-    
-    if (!songUrl || songUrl.trim() === "") {
-      console.warn(`⚠️ No hay canción configurada para ${nextSale.agent.name}, usando canción por defecto`);
-    }
+        // Validar que la URL no esté vacía
+        const validSongUrl = songUrl && songUrl.trim() !== "" ? songUrl : DEFAULT_SONG_URL;
+        
+        if (!songUrl || songUrl.trim() === "") {
+          console.warn(`⚠️ No hay canción configurada para ${nextSale.agent.name}, usando canción por defecto`);
+        }
 
-    const audio = new Audio(validSongUrl);
-    audio.volume = 0.8;
-    audio.loop = false;
-    audioRef.current = audio;
+        const audio = new Audio(validSongUrl);
+        audio.volume = 1.0; // Volumen completo al inicio
+        audio.loop = false;
+        audioRef.current = audio;
 
-    // Manejo robusto de reproducción de audio
+    // Manejo robusto de reproducción de audio con async/await
     const playAudio = async () => {
       try {
         await audio.play();
@@ -102,18 +115,62 @@ const Index = () => {
 
     playAudio();
 
-    // Temporizador para cerrar la celebración después de 7 segundos
+    // Temporizador para cerrar la celebración después de 28 segundos
+    // Con fade out de audio en los últimos 2 segundos
+    const FADE_OUT_DURATION = 2000; // 2 segundos de fade out
+    const fadeOutStartTime = CONFIG.JACKPOT_DURATION - FADE_OUT_DURATION;
+    
+    // Iniciar fade out antes de que termine la celebración
+    fadeOutTimerRef.current = setTimeout(() => {
+      if (audioRef.current) {
+        console.log("🔉 Iniciando fade out del audio...");
+        const steps = 20; // 20 pasos en 2 segundos = 100ms por paso
+        const volumeStep = 1.0 / steps;
+        
+        fadeOutIntervalRef.current = setInterval(() => {
+          if (audioRef.current) {
+            audioRef.current.volume = Math.max(0, audioRef.current.volume - volumeStep);
+            if (audioRef.current.volume <= 0) {
+              if (fadeOutIntervalRef.current) {
+                clearInterval(fadeOutIntervalRef.current);
+                fadeOutIntervalRef.current = null;
+              }
+              if (audioRef.current) {
+                audioRef.current.volume = 0;
+                console.log("✅ Fade out completado");
+              }
+            }
+          } else {
+            if (fadeOutIntervalRef.current) {
+              clearInterval(fadeOutIntervalRef.current);
+              fadeOutIntervalRef.current = null;
+            }
+          }
+        }, FADE_OUT_DURATION / steps); // 100ms por paso
+      }
+    }, fadeOutStartTime);
     if (timerRef.current) clearTimeout(timerRef.current);
     
     timerRef.current = setTimeout(() => {
-      console.log("⏰ Tiempo cumplido (7s): Cerrando Jackpot");
+      console.log(`⏰ Tiempo cumplido (${CONFIG.JACKPOT_DURATION / 1000}s): Cerrando Jackpot`);
       setJackpotActive(false);
       setCelebratingAgent(null);
       
-      // Detener audio suavemente
+      // Limpiar timers de fade out
+      if (fadeOutTimerRef.current) {
+        clearTimeout(fadeOutTimerRef.current);
+        fadeOutTimerRef.current = null;
+      }
+      if (fadeOutIntervalRef.current) {
+        clearInterval(fadeOutIntervalRef.current);
+        fadeOutIntervalRef.current = null;
+      }
+      
+      // Detener audio completamente
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
+        audioRef.current.volume = 1.0; // Resetear volumen para la próxima vez
         audioRef.current = null;
       }
 
@@ -122,10 +179,10 @@ const Index = () => {
 
       // Procesar siguiente venta en cola si existe (con delay de 500ms)
       setTimeout(() => {
-        processNextSale.current();
+        processNextSale();
       }, 500);
     }, CONFIG.JACKPOT_DURATION);
-  });
+  }, []);
 
   // --- EFECTO PARA AGREGAR VENTAS A LA COLA ---
   useEffect(() => {
@@ -144,7 +201,7 @@ const Index = () => {
 
     // Si no estamos procesando nada, procesar inmediatamente
     if (!isProcessingRef.current) {
-      processNextSale.current();
+      processNextSale();
     }
   }, [saleChange, clearSaleChange]);
 
@@ -195,9 +252,27 @@ const Index = () => {
     );
   }
 
-  // 3. Mostrar error si existe (opcional - puedes mejorarlo visualmente)
+  // 3. Mostrar error si existe
   if (error) {
     console.error("Error en la aplicación:", error);
+    // Mostrar banner de error (no bloquea la aplicación)
+    return (
+      <div className="relative h-screen w-screen overflow-hidden bg-transparent">
+        <SpaceBackground />
+        <div className="relative z-50 flex items-center justify-center h-full">
+          <div className="bg-red-500/90 backdrop-blur-xl px-8 py-4 rounded-2xl border-4 border-red-600 shadow-2xl">
+            <h2 className="text-2xl font-bold text-white mb-2">⚠️ Error de Conexión</h2>
+            <p className="text-white/90">{error}</p>
+            <button
+              onClick={refetch}
+              className="mt-4 px-4 py-2 bg-white text-red-600 font-bold rounded-lg hover:bg-red-50 transition-colors"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // 4. Jackpot Activo
@@ -223,7 +298,7 @@ const Index = () => {
       <SpaceBackground />
 
       {/* 2. EL DASHBOARD VA ENCIMA */}
-      <div className="relative z-10 h-full w-full">
+      <div className="relative z-10 h-full w-full overflow-visible">
         <DashboardView 
           teams={teams} 
           getTeamTheme={getTeamTheme}
