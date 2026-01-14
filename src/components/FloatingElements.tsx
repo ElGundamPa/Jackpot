@@ -15,13 +15,13 @@ const FloatingElements = () => {
   ];
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-20">
-      {/* Elementos flotantes verticales */}
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      {/* Elementos flotantes verticales - z-index bajo para no interferir con contenido */}
       {floatingIcons.map((item, index) => (
         <motion.div
           key={index}
-          className="absolute text-4xl opacity-20"
-          style={{ left: item.x }}
+          className="absolute text-4xl opacity-10"
+          style={{ left: item.x, zIndex: 0 }}
           initial={{ y: "110vh", rotate: 0 }}
           animate={{
             y: "-10vh",

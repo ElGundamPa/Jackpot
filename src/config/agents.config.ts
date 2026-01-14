@@ -24,30 +24,30 @@ export const AGENT_PHOTOS: Record<string, string> = {
 
 // ========== 🎵 CANCIONES DE CELEBRACIÓN (30 segundos cada una) ==========
 export const AGENT_CELEBRATION_SONGS: Record<string, string> = {
-  // Mesa 1 - Nicolás
-  "Anny Martinez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMAnny.mp3?alt=media&token=c286f102-b058-4449-a79e-db07aaaa8285",
-  "Daniel Salazar": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
+  // Mesa 1 - Nicolás (orden correcto: Camila Hernandez, Isaac Fernandez, Daniel Salazar, Leonel Cruz, Emanuel Garcia, Luisa Gutierrez, Wilder Zapata)
+  "Camila Hernandez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
   "Isaac Fernandez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
+  "Daniel Salazar": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
+  "Emanuel Garcia": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMEmanuel.mp3?alt=media&token=400d7d2c-4e82-451c-911e-9250500ff15c",
   "Luisa Gutierrez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
   "Wilder Zapata": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
-  "Emanuel Garcia": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMEmanuel.mp3?alt=media&token=400d7d2c-4e82-451c-911e-9250500ff15c",
   
-  // Mesa 2 - Enzo
-  "Camila Hernandez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
-  "Giann Carlos": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMGiann.mp3?alt=media&token=51f5a756-8715-4356-be5d-b1199cd70dc1",
+  // Mesa 2 - Enzo (orden correcto: Juan de Dios, Isadora Cruz, Ismael Lopez, Anny Martinez, Giann Carlos, Mariano Campuzano, Maylo Villalobos)
+  "Juan de Dios": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMjuand.mp3?alt=media&token=e428e85a-6b72-4d19-be40-03f6f31b583d",
   "Isadora Cruz": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
   "Ismael Lopez": "https://assets.mixkit.co/active_storage/sfx/1934/1934-preview.mp3",
-  "Juan de Dios": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMjuand.mp3?alt=media&token=e428e85a-6b72-4d19-be40-03f6f31b583d",
+  "Anny Martinez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMAnny.mp3?alt=media&token=c286f102-b058-4449-a79e-db07aaaa8285",
+  "Giann Carlos": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMGiann.mp3?alt=media&token=51f5a756-8715-4356-be5d-b1199cd70dc1",
   "Mariano Campuzano": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
   "Maylo Villalobos": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
   
-  // Mesa 3 - Ricardo
+  // Mesa 3 - Ricardo (orden correcto: Samanta Rous, Guadalupe Gonzalez, Heiner Ramirez, Leomelly Alvarez, Amelia Huaman, Matias Guerrero)
+  "Samanta Rous": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMsamanta.mp3?alt=media&token=5d0212d0-6abc-4359-8a34-3aec8e3dc701",
   "Guadalupe Gonzalez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMguada.mp3?alt=media&token=c2f7f9df-1aa4-4b2d-8d22-a3afb7197168",
-  "Amelia Huaman": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMamelia.mp3?alt=media&token=b9cc55b6-870e-4fe4-ad4d-763e81e7796b",
   "Heiner Ramirez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMHeiner.mp3?alt=media&token=5ec72712-e71b-4b1e-8d00-d931a60a2a6c",
   "Leomelly Alvarez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMLeomelly.mp3?alt=media&token=30e04aec-391b-4ec7-b383-4eceb6f24897",
+  "Amelia Huaman": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMamelia.mp3?alt=media&token=b9cc55b6-870e-4fe4-ad4d-763e81e7796b",
   "Matias Guerrero": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
-  "Samanta Rous": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMsamanta.mp3?alt=media&token=5d0212d0-6abc-4359-8a34-3aec8e3dc701",
 };
 
 // Canción por defecto si no se encuentra la del agente

@@ -25,12 +25,12 @@ const AnimatedCharacter = ({ character, position, size = "md" }: AnimatedCharact
     lg: "text-9xl"
   };
 
-  // 📍 Posiciones
+  // 📍 Posiciones - Ajustadas para evitar superposiciones con contenido principal
   const positions = {
     "bottom-left": "bottom-8 left-8",
     "bottom-right": "bottom-8 right-8",
-    "top-left": "top-8 left-8",
-    "top-right": "top-8 right-8"
+    "top-left": "top-2 left-2", // Movido más arriba y a la izquierda
+    "top-right": "top-2 right-2" // Movido más arriba y a la derecha
   };
 
   // 🎬 Animaciones personalizadas
@@ -86,10 +86,10 @@ const AnimatedCharacter = ({ character, position, size = "md" }: AnimatedCharact
 
   return (
     <motion.div
-      className={`fixed ${positions[position]} z-30 pointer-events-none select-none`}
+      className={`fixed ${positions[position]} z-5 pointer-events-none select-none opacity-30`}
       animate={animations[animationType]}
       initial={{ opacity: 0, scale: 0 }}
-      whileInView={{ opacity: 1, scale: 1 }}
+      whileInView={{ opacity: 0.3, scale: 0.8 }}
       transition={{ duration: 0.5 }}
     >
       {/* Brillo detrás del personaje */}

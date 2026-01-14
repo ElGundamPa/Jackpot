@@ -19,11 +19,12 @@ const AnimatedGifCharacter = ({
   offsetY = 0 // ✅ NUEVO: offset vertical
 }: AnimatedGifCharacterProps) => {
   
-  const [isVisible, setIsVisible] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
-  useEffect(() => {
-    setTimeout(() => setIsVisible(true), 500);
-  }, []);
+  // Manejar la carga de la imagen
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
 
   // 🎨 GALERÍA DE PERSONAJES
   const characterGifs = {
@@ -66,30 +67,87 @@ const AnimatedGifCharacter = ({
     return "0px";
   };
 
+  // Duración unificada para todas las animaciones: 3 segundos exactos
+  const ANIMATION_DURATION = 3;
+
   const animationVariants = {
     float: {
       initial: { opacity: 0, y: 50 },
       animate: { 
-        opacity: 1, 
+        opacity: [0, 1], // Fade in gradual
         y: [0, -15, 0], 
-        transition: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+        transition: { 
+          opacity: { 
+            duration: 1, 
+            ease: "easeOut",
+            times: [0, 1]
+          }, // Fade in suave de 1 segundo
+          y: { 
+            duration: ANIMATION_DURATION, 
+            repeat: Infinity, 
+            ease: "easeInOut",
+            times: [0, 0.5, 1],
+            delay: 0 // Sin delay para que empiece inmediatamente después del fade in
+          }
+        }
       }
     },
     bounce: {
       initial: { opacity: 0, scale: 0.8 },
       animate: { 
-        opacity: 1, 
+        opacity: [0, 1], // Fade in gradual
         y: [0, -20, 0],
-        transition: { duration: 1.5, repeat: Infinity, ease: "easeOut" }
+        transition: { 
+          opacity: { 
+            duration: 1, 
+            ease: "easeOut",
+            times: [0, 1]
+          }, // Fade in suave de 1 segundo
+          y: { 
+            duration: ANIMATION_DURATION, 
+            repeat: Infinity, 
+            ease: "easeInOut",
+            times: [0, 0.5, 1],
+            delay: 0 // Sin delay para que empiece inmediatamente después del fade in
+          }
+        }
       }
     },
     none: {
       initial: { opacity: 0 },
-      animate: { opacity: 1 }
+      animate: { 
+        opacity: 1,
+        transition: { duration: 1, ease: "easeOut" }
+      }
     }
   };
 
-  if (!isVisible) return null;
+  // No renderizar la animación hasta que la imagen esté completamente cargada
+  if (!imageLoaded) {
+    return (
+      <div 
+        className={`fixed ${getPositionClasses()} z-50 pointer-events-none`}
+        style={{
+          width: size,
+          height: size,
+          bottom: getBottomPosition(),
+          opacity: 0, // Completamente invisible mientras carga
+          visibility: 'hidden' // Ocultar del layout también
+        }}
+      >
+        <img 
+          src={characterGifs[type]} 
+          alt={type}
+          className="w-full h-full object-contain"
+          onLoad={handleImageLoad}
+          onError={(e) => {
+            console.error(`❌ Error cargando ${type}:`, e);
+            handleImageLoad(); // Mostrar incluso si hay error para evitar bloqueo
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -109,9 +167,9 @@ const AnimatedGifCharacter = ({
           className="w-full h-full object-contain filter drop-shadow-xl origin-bottom"
           style={{
             transform: `scale(${getScale()})`,
+            opacity: 1, // Imagen completamente visible una vez cargada
+            display: 'block' // Evitar espacios en blanco
           }}
-          onLoad={() => console.log(`✅ ${type} cargado en ${position}`)}
-          onError={(e) => console.error(`❌ Error cargando ${type}:`, e)}
         />
       </div>
 

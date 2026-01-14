@@ -232,6 +232,28 @@
   }
 }
 
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes pulse-glow-soft {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1.1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.12);
+  }
+}
+
 @layer utilities {
   /* Ocultar barra de scroll para Chrome, Safari and Opera */
   .scrollbar-hide::-webkit-scrollbar {
@@ -448,8 +470,8 @@
   content: "";
   animation: firework 2s infinite;
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: var(--firework-top, 50%);
+  left: var(--firework-left, 50%);
   transform: translate(-50%, var(--y));
   width: var(--initialSize);
   aspect-ratio: 1;
@@ -544,6 +566,177 @@
   animation-delay: -0.4s;
 }
 
+/* Fuegos artificiales en diferentes posiciones con colores variados */
+.firework-1,
+.firework-1::before,
+.firework-1::after {
+  --color1: #FFD700;
+  --color2: #FF6B6B;
+  --color3: #4ECDC4;
+  --color4: #45B7D1;
+  --color5: #FFA07A;
+  --color6: #98D8C8;
+  --finalSize: 50vmin;
+  animation-delay: 0s;
+}
+
+.firework-2,
+.firework-2::before,
+.firework-2::after {
+  --color1: #FF6B6B;
+  --color2: #4ECDC4;
+  --color3: #FFD700;
+  --color4: #98D8C8;
+  --color5: #45B7D1;
+  --color6: #FFA07A;
+  --finalSize: 45vmin;
+  animation-delay: 0.3s;
+}
+
+.firework-3,
+.firework-3::before,
+.firework-3::after {
+  --color1: #4ECDC4;
+  --color2: #FFD700;
+  --color3: #FF6B6B;
+  --color4: #45B7D1;
+  --color5: #98D8C8;
+  --color6: #FFA07A;
+  --finalSize: 48vmin;
+  animation-delay: 0.6s;
+}
+
+.firework-4,
+.firework-4::before,
+.firework-4::after {
+  --color1: #45B7D1;
+  --color2: #FFA07A;
+  --color3: #FFD700;
+  --color4: #FF6B6B;
+  --color5: #4ECDC4;
+  --color6: #98D8C8;
+  --finalSize: 42vmin;
+  animation-delay: 0.9s;
+}
+
+.firework-5,
+.firework-5::before,
+.firework-5::after {
+  --color1: #FFA07A;
+  --color2: #98D8C8;
+  --color3: #45B7D1;
+  --color4: #FFD700;
+  --color5: #FF6B6B;
+  --color6: #4ECDC4;
+  --finalSize: 46vmin;
+  animation-delay: 1.2s;
+}
+
+.firework-6,
+.firework-6::before,
+.firework-6::after {
+  --color1: #98D8C8;
+  --color2: #FFD700;
+  --color3: #FFA07A;
+  --color4: #4ECDC4;
+  --color5: #45B7D1;
+  --color6: #FF6B6B;
+  --finalSize: 44vmin;
+  animation-delay: 1.5s;
+}
+
+.firework-7,
+.firework-7::before,
+.firework-7::after {
+  --color1: #F7DC6F;
+  --color2: #BB8FCE;
+  --color3: #FFD700;
+  --color4: #FF6B6B;
+  --color5: #4ECDC4;
+  --color6: #45B7D1;
+  --finalSize: 47vmin;
+  animation-delay: 1.8s;
+}
+
+.firework-8,
+.firework-8::before,
+.firework-8::after {
+  --color1: #BB8FCE;
+  --color2: #F7DC6F;
+  --color3: #45B7D1;
+  --color4: #FFD700;
+  --color5: #FF6B6B;
+  --color6: #4ECDC4;
+  --finalSize: 43vmin;
+  animation-delay: 2.1s;
+}
+
+/* Animación de confeti cayendo */
+@keyframes confettiFall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.confetti-piece {
+  will-change: transform, opacity;
+}
+
+/* Animación de celebración para la foto de perfil */
+@keyframes profileCelebration {
+  0%, 100% {
+    transform: translateY(0px) scale(1) rotate(0deg);
+    box-shadow: 0 0 80px rgba(255, 255, 255, 0.5), 0 0 120px rgba(255, 215, 0, 0.3);
+  }
+  25% {
+    transform: translateY(-10px) scale(1.05) rotate(2deg);
+    box-shadow: 0 0 100px rgba(255, 255, 255, 0.7), 0 0 150px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    transform: translateY(0px) scale(1.08) rotate(0deg);
+    box-shadow: 0 0 120px rgba(255, 255, 255, 0.8), 0 0 180px rgba(255, 215, 0, 0.6);
+  }
+  75% {
+    transform: translateY(-8px) scale(1.05) rotate(-2deg);
+    box-shadow: 0 0 100px rgba(255, 255, 255, 0.7), 0 0 150px rgba(255, 215, 0, 0.5);
+  }
+}
+
+/* Rotación lenta para el anillo de energía */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* Pulso de brillo mejorado */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
 @keyframes coinFall {
   0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
   100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
@@ -631,9 +824,7 @@
 .sunburst.subtle {
   opacity: 0.15;
   animation: spin 40s linear infinite;
-}
-
-/* --- GRADIENTES ANIMADOS --- */
+}/* --- GRADIENTES ANIMADOS --- */
 .bg-gradient-animated {
   background: linear-gradient(
     45deg,

@@ -35,7 +35,7 @@ const DashboardView = ({ teams, getTeamTheme, getTeamIcon, getAgentPhoto }: Dash
     <div className="h-screen w-screen relative font-sans text-white overflow-hidden flex flex-col">
       <SpaceBackground />
       
-      {/* 🎨 Elementos flotantes decorativos */}
+      {/* 🎨 Elementos flotantes decorativos - z-index bajo para que no interfieran */}
       <FloatingElements />
       
       {/* 🧙‍♂️ Mago en esquina inferior izquierda */}
@@ -58,15 +58,15 @@ const DashboardView = ({ teams, getTeamTheme, getTeamIcon, getAgentPhoto }: Dash
         type="duck" 
         position="bottom-right" 
         size={100}
-        animation="bounce"
+        animation="float" // ✅ Cambiado de "bounce" a "float" para que todas tengan la misma duración
       />
       
-      {/* ⭐ Personajes emoji adicionales (opcional) */}
+      {/* ⭐ Personajes emoji adicionales - con opacidad reducida y z-index bajo */}
       <AnimatedCharacter character="rocket" position="top-left" size="sm" />
       <AnimatedCharacter character="star" position="top-right" size="sm" />
       
       {/* ========== HEADER GLOBAL ========== */}
-      <div className="relative z-10 px-6 pt-4 pb-2 flex items-center justify-between shrink-0">
+      <div className="relative z-30 px-6 pt-4 pb-2 flex items-center justify-between shrink-0">
         
         {/* IZQUIERDA: Logo */}
         <div className="w-1/3 flex justify-start">
@@ -112,7 +112,7 @@ const DashboardView = ({ teams, getTeamTheme, getTeamIcon, getAgentPhoto }: Dash
       </div>
 
       {/* ========== GRID DE EQUIPOS ========== */}
-      <div className="relative z-10 flex-1 grid grid-cols-3 gap-4 px-4 pt-2 pb-2 overflow-visible items-stretch min-h-0">
+      <div className="relative z-20 flex-1 grid grid-cols-3 gap-4 px-4 pt-2 pb-2 overflow-visible items-stretch min-h-0">
         {teams.map((team, index) => {
           const theme = getTeamTheme(index);
           const sortedAgents = [...team.agents].sort((a, b) => b.sales - a.sales);
@@ -122,16 +122,21 @@ const DashboardView = ({ teams, getTeamTheme, getTeamIcon, getAgentPhoto }: Dash
             <div key={team.id} className="flex flex-col h-full relative group min-h-0 overflow-visible">
               
               {/* ===== Header del Equipo ===== */}
-              <div className={`relative p-3 pt-3 rounded-[2rem] shadow-2xl z-20 mb-3 shrink-0 flex items-center gap-2 transition-transform duration-300 ${theme.bg} border-b-[8px] ${theme.border} overflow-visible`}>
+              <div className={`relative p-3 pt-10 pb-3 rounded-[2rem] shadow-2xl z-20 mb-3 shrink-0 flex items-center gap-2 transition-transform duration-300 ${theme.bg} border-b-[8px] ${theme.border} overflow-visible`}>
                 
-                {/* Foto del Líder (Ícono del Equipo) */}
-                <div className="relative shrink-0 -ml-2 -mt-3">
+                {/* Foto del Líder (Ícono del Equipo) - Ajustado para que no se corte durante la animación */}
+                <div className="relative shrink-0 -ml-2 -mt-10 z-10" style={{ overflow: 'visible' }}>
                   <div className="absolute inset-0 bg-white/40 rounded-full blur-xl transform scale-110" />
                   <img 
                     src={getTeamIcon(index)} 
                     alt="Líder del Equipo" 
-                    className="relative w-32 h-32 object-cover rounded-full border-[4px] border-white shadow-[0_10px_20px_rgba(0,0,0,0.5)] animate-bounce" 
-                    style={{ animationDuration: '3s' }} 
+                    className="relative w-32 h-32 object-cover rounded-full border-[4px] border-white shadow-[0_10px_20px_rgba(0,0,0,0.5)]" 
+                    style={{ 
+                      animation: 'bounce 3s ease-in-out infinite',
+                      objectPosition: 'center 25%',
+                      willChange: 'transform',
+                      transformOrigin: 'center center'
+                    }} 
                   />
                 </div>
                 
@@ -164,35 +169,43 @@ const DashboardView = ({ teams, getTeamTheme, getTeamIcon, getAgentPhoto }: Dash
               </div>
 
               {/* ===== Lista de Agentes ===== */}
-              <div className="flex-1 overflow-y-auto overflow-x-visible scrollbar-hide flex flex-col gap-2 px-2 pb-2 pt-1 min-h-0">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col gap-2 px-2 pb-2 pt-1 min-h-0 relative z-10">
                 {sortedAgents.map((agent, idx) => {
                   // Estilos según ranking
-                  let cardStyle = "", ringColor = "", icon = null, iconBg = "";
+                  let cardStyle = "", ringColor = "", icon = null, iconBg = "", glowEffect = "", avatarGlow = "";
                   
                   if (idx === 0) {
-                    // 🥇 Primer Lugar
+                    // 🥇 Primer Lugar - Luz dorada intensa
                     cardStyle = "bg-[#2d1b4e]/95 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.3)]";
                     ringColor = "border-yellow-400";
                     iconBg = "bg-yellow-400 text-yellow-900";
                     icon = <Crown className="w-5 h-5 fill-yellow-900" />;
+                    glowEffect = "shadow-[0_0_25px_rgba(234,179,8,0.8),0_0_50px_rgba(234,179,8,0.4)]";
+                    avatarGlow = "shadow-[0_0_20px_rgba(234,179,8,0.9),0_0_40px_rgba(234,179,8,0.5),inset_0_0_20px_rgba(234,179,8,0.3)]";
                   } else if (idx === 1) {
-                    // 🥈 Segundo Lugar
+                    // 🥈 Segundo Lugar - Luz rosa intensa
                     cardStyle = "bg-[#2d1b4e]/80 border-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.2)]";
                     ringColor = "border-pink-500";
                     iconBg = "bg-pink-500 text-white";
                     icon = <Target className="w-5 h-5 fill-pink-200" />;
+                    glowEffect = "shadow-[0_0_25px_rgba(236,72,153,0.8),0_0_50px_rgba(236,72,153,0.4)]";
+                    avatarGlow = "shadow-[0_0_20px_rgba(236,72,153,0.9),0_0_40px_rgba(236,72,153,0.5),inset_0_0_20px_rgba(236,72,153,0.3)]";
                   } else if (idx === 2) {
-                    // 🥉 Tercer Lugar
+                    // 🥉 Tercer Lugar - Luz naranja intensa
                     cardStyle = "bg-[#2d1b4e]/70 border-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.2)]";
                     ringColor = "border-orange-500";
                     iconBg = "bg-orange-500 text-white";
                     icon = <Zap className="w-5 h-5 fill-orange-200" />;
+                    glowEffect = "shadow-[0_0_25px_rgba(249,115,22,0.8),0_0_50px_rgba(249,115,22,0.4)]";
+                    avatarGlow = "shadow-[0_0_20px_rgba(249,115,22,0.9),0_0_40px_rgba(249,115,22,0.5),inset_0_0_20px_rgba(249,115,22,0.3)]";
                   } else {
-                    // Resto
+                    // Resto - Luz azul leve pero visible para inspirar
                     cardStyle = "bg-[#2d1b4e]/40 border-blue-500/50 hover:bg-[#2d1b4e]/60";
                     ringColor = "border-blue-400/50";
                     iconBg = "bg-slate-700 text-slate-300";
                     icon = <span className="font-bold text-sm">#{idx + 1}</span>;
+                    glowEffect = "shadow-[0_0_15px_rgba(59,130,246,0.5),0_0_30px_rgba(59,130,246,0.2)]";
+                    avatarGlow = "shadow-[0_0_12px_rgba(59,130,246,0.6),0_0_24px_rgba(59,130,246,0.3)]";
                   }
                   
                   const realAvatar = getAgentPhoto(agent.name, agent.avatar);
@@ -200,15 +213,31 @@ const DashboardView = ({ teams, getTeamTheme, getTeamIcon, getAgentPhoto }: Dash
                   return (
                     <div 
                       key={agent.id} 
-                      className={`relative flex items-center p-2 rounded-xl border-2 transition-all duration-300 ml-4 overflow-visible ${cardStyle}`}
+                      className={`relative flex items-center p-2 rounded-xl border-2 transition-all duration-300 ml-4 overflow-visible ${cardStyle} ${glowEffect}`}
                     >
                       {/* Avatar del Agente */}
-                      <div className="relative shrink-0 -ml-6 z-10 overflow-visible">
-                        <div className={`absolute inset-0 rounded-full blur-sm opacity-50 transform scale-90 ${idx === 0 ? 'bg-yellow-400' : 'bg-black'}`} />
+                      <div className="relative shrink-0 -ml-6 z-10">
+                        {/* Efecto de brillo detrás del avatar */}
+                        <div 
+                          className={`absolute inset-0 rounded-full blur-md transform scale-110 ${
+                            idx === 0 ? 'bg-yellow-400/60' : 
+                            idx === 1 ? 'bg-pink-500/60' : 
+                            idx === 2 ? 'bg-orange-500/60' : 
+                            'bg-blue-400/40'
+                          }`}
+                          style={{
+                            animation: idx < 3 ? 'pulse-glow 2s ease-in-out infinite' : 'pulse-glow-soft 3s ease-in-out infinite',
+                            animationDelay: `${idx * 0.2}s`
+                          }}
+                        />
                         <img 
                           src={realAvatar} 
                           alt={agent.name} 
-                          className={`relative w-12 h-12 rounded-full object-cover border-2 shadow-lg ${ringColor} bg-slate-800`} 
+                          className={`relative w-12 h-12 rounded-full object-cover border-2 ${ringColor} bg-slate-800 ${avatarGlow}`}
+                          style={{ 
+                            objectPosition: 'center 25%',
+                            willChange: 'transform'
+                          }}
                         />
                         {/* Badge de Ranking */}
                         <div className={`absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center border border-[#2d1b4e] shadow-md z-20 ${iconBg}`}>

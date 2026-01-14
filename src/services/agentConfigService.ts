@@ -44,18 +44,21 @@ export const getAgentConfigs = (): AgentConfigs => {
 };
 
 // Obtener teamId por defecto basado en el nombre
-// Mapeo manual basado en los comentarios del código original
+// Mapeo manual basado en el orden correcto de las mesas
 const getDefaultTeamId = (name: string): string => {
   // Mesa 1 - Nicolás
-  const mesa1 = ["Anny Martinez", "Daniel Salazar", "Isaac Fernandez", "Luisa Gutierrez", "Wilder Zapata", "Emanuel Garcia"];
+  // Orden correcto según las imágenes: Camila Hernandez, Isaac Fernandez, Daniel Salazar, Leonel Cruz, Emanuel Garcia, Luisa Gutierrez
+  const mesa1 = ["Camila Hernandez", "Isaac Fernandez", "Daniel Salazar", "Leonel Cruz", "Emanuel Garcia", "Luisa Gutierrez", "Wilder Zapata"];
   if (mesa1.includes(name)) return "mesa-1";
   
   // Mesa 2 - Enzo
-  const mesa2 = ["Camila Hernandez", "Giann Carlos", "Isadora Cruz", "Ismael Lopez", "Juan de Dios", "Mariano Campuzano", "Maylo Villalobos"];
+  // Orden correcto según las imágenes: Juan de Dios, Isadora Cruz, Ismael Lopez, Anny Martinez, Giann Carlos, Mariano Campuzano, Maylo Villalobos
+  const mesa2 = ["Juan de Dios", "Isadora Cruz", "Ismael Lopez", "Anny Martinez", "Giann Carlos", "Mariano Campuzano", "Maylo Villalobos"];
   if (mesa2.includes(name)) return "mesa-2";
   
   // Mesa 3 - Ricardo
-  const mesa3 = ["Guadalupe Gonzalez", "Amelia Huaman", "Heiner Ramirez", "Leomelly Alvarez", "Matias Guerrero", "Samanta Rous"];
+  // Orden correcto según las imágenes: Samanta Rous, Guadalupe Gonzalez, Heiner Ramirez, Leomelly Alvarez
+  const mesa3 = ["Samanta Rous", "Guadalupe Gonzalez", "Heiner Ramirez", "Leomelly Alvarez", "Amelia Huaman", "Matias Guerrero"];
   if (mesa3.includes(name)) return "mesa-3";
   
   // Por defecto, distribuir por orden alfabético
