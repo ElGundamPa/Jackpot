@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:sale": "node -e \"console.log('Para testear ventas, abre la consola del navegador (F12) y ejecuta:'); console.log('window.simulateSale(\\\"Nombre Agente\\\", monto)'); console.log('Ejemplo: window.simulateSale(\\\"Daniel Salazar\\\", 5000)')\""
+    "test:sale": "node -e \"console.log('Para testear ventas, abre la consola del navegador (F12) y ejecuta:'); console.log('window.simulateSale(\\\"Nombre Agente\\\", monto)'); console.log('Ejemplo: window.simulateSale(\\\"Daniel Salazar\\\", 5000)')\"",
+    "test:total-global": "node scripts/test-total-global.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

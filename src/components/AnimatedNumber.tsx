@@ -8,6 +8,7 @@ interface AnimatedNumberProps {
   suffix?: string;
   className?: string;
   formatter?: (value: number) => string;
+  playSound?: boolean; // Prop para activar el sonido (solo para el total global)
 }
 
 /**
@@ -21,7 +22,8 @@ const AnimatedNumber = ({
   prefix = '', 
   suffix = '', 
   className = '', 
-  formatter 
+  formatter,
+  playSound = false // Por defecto no reproducir sonido
 }: AnimatedNumberProps) => {
   const [displayValue, setDisplayValue] = useState(value);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -34,6 +36,10 @@ const AnimatedNumber = ({
   const displayValueRef = useRef<number>(value);
   const logStartValueRef = useRef<number>(value);
   const logTargetValueRef = useRef<number>(value);
+  
+  // Referencia para el audio de "subida de numero"
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioLoopIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Actualizar la referencia cuando cambia el displayValue
   useEffect(() => {
@@ -90,6 +96,97 @@ const AnimatedNumber = ({
 
       console.log(`🎬 Iniciando animación: ${animationStartValue.toLocaleString()} → ${animationTargetValue.toLocaleString()} (duración: ${duration}s)`);
 
+      // Reproducir sonido si está habilitado
+      if (playSound) {
+        // Limpiar audio anterior si existe
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current = null;
+        }
+        if (audioLoopIntervalRef.current) {
+          clearInterval(audioLoopIntervalRef.current);
+          audioLoopIntervalRef.current = null;
+        }
+
+        // Crear y configurar el audio
+        const audio = new Audio('/audio/subida de numero.mp3');
+        audio.volume = 0.6; // 60% de volumen
+        audio.loop = false; // No usar loop nativo, lo manejamos manualmente
+        
+        // Pre-cargar el audio para evitar problemas de autoplay
+        audio.preload = 'auto';
+        
+        // Intentar cargar el audio primero
+        audio.load();
+        
+        audioRef.current = audio;
+        
+        // Función para reproducir el audio con manejo robusto de errores
+        const playAudioSafely = async (audioElement: HTMLAudioElement, attempt: number = 1): Promise<void> => {
+          try {
+            // Si es el primer intento, esperar un delay más largo para asegurar que el jackpot terminó
+            // El jackpot dura 12 segundos, pero agregamos un buffer de 500ms para asegurar que el audio del jackpot haya terminado
+            if (attempt === 1) {
+              await new Promise(resolve => setTimeout(resolve, 500)); // 500ms de delay para que termine el jackpot
+            }
+            
+            await audioElement.play();
+            console.log(`🔊 Audio del total global iniciado correctamente (después del jackpot)`);
+          } catch (err: any) {
+            // Si es un error de autoplay o abort, intentar una vez más después de un delay
+            if (attempt < 2 && (err.name === 'NotAllowedError' || err.name === 'AbortError')) {
+              console.log(`⏳ Reintentando reproducir audio del total global (intento ${attempt + 1})...`);
+              await new Promise(resolve => setTimeout(resolve, 300));
+              return playAudioSafely(audioElement, attempt + 1);
+            } else {
+              // Si falla después de los reintentos, solo loguear el error sin bloquear la animación
+              // No mostrar error si es AbortError (puede ser normal si se cancela rápidamente)
+              if (err.name !== 'AbortError') {
+                console.warn(`⚠️ No se pudo reproducir el audio del total global (intento ${attempt}):`, err.name || err);
+              }
+            }
+          }
+        };
+
+        // Reproducir por primera vez con manejo de errores mejorado
+        playAudioSafely(audio);
+
+        // Calcular cuántas veces necesitamos reproducir el audio
+        // El audio dura 1.33 segundos (1 segundo y 33 centésimas), la animación dura 'duration' segundos
+        const audioDuration = 1.33; // Duración exacta del audio
+        const totalRepetitions = Math.ceil(duration / audioDuration);
+        
+        // Reproducir el audio en loop cada 1.33 segundos hasta que termine la animación
+        let repetitionCount = 0;
+        audioLoopIntervalRef.current = setInterval(() => {
+          repetitionCount++;
+          if (repetitionCount < totalRepetitions && audioRef.current) {
+            // Reiniciar y reproducir el audio nuevamente
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(err => {
+              // Solo loguear errores en el loop, no bloquear
+              if (err.name !== 'AbortError') {
+                console.warn('⚠️ Error al reproducir audio en loop:', err.name || err);
+              }
+            });
+          } else {
+            // Detener el loop cuando hayamos cubierto toda la duración de la animación
+            if (audioLoopIntervalRef.current) {
+              clearInterval(audioLoopIntervalRef.current);
+              audioLoopIntervalRef.current = null;
+            }
+            // Detener el último audio si aún está reproduciéndose
+            if (audioRef.current) {
+              audioRef.current.pause();
+              audioRef.current.currentTime = 0;
+            }
+          }
+        }, audioDuration * 1000); // Convertir a milisegundos (1330ms)
+
+        console.log(`🔊 Sonido del total global configurado: se reproducirá ${totalRepetitions} veces durante ${duration}s (audio: ${audioDuration}s cada uno)`);
+      }
+
       const animate = (currentTime: number) => {
         if (startTimeRef.current === null) {
           startTimeRef.current = currentTime;
@@ -140,6 +237,17 @@ const AnimatedNumber = ({
           // Log para verificar que completó la animación
           const totalElapsed = (currentTime - startTimeRef.current!) / 1000;
           console.log(`✅ Animación completada: ${logStartValueRef.current.toLocaleString()} → ${logTargetValueRef.current.toLocaleString()} en ${totalElapsed.toFixed(2)}s (objetivo: ${duration}s)`);
+          
+          // Detener el audio cuando termine la animación
+          if (playSound && audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            audioRef.current = null;
+          }
+          if (audioLoopIntervalRef.current) {
+            clearInterval(audioLoopIntervalRef.current);
+            audioLoopIntervalRef.current = null;
+          }
         }
       };
 
@@ -150,8 +258,18 @@ const AnimatedNumber = ({
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      // Limpiar audio al desmontar o cambiar
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current = null;
+      }
+      if (audioLoopIntervalRef.current) {
+        clearInterval(audioLoopIntervalRef.current);
+        audioLoopIntervalRef.current = null;
+      }
     };
-  }, [value, duration]); // Solo dependencias esenciales
+  }, [value, duration, playSound]); // Agregar playSound a las dependencias
 
   const formatValue = formatter 
     ? formatter(Math.floor(displayValue))

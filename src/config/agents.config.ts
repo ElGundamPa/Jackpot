@@ -26,7 +26,7 @@ export const AGENT_PHOTOS: Record<string, string> = {
 export const AGENT_CELEBRATION_SONGS: Record<string, string> = {
   // Mesa 1 - Nicolás (orden correcto: Camila Hernandez, Isaac Fernandez, Daniel Salazar, Leonel Cruz, Emanuel Garcia, Luisa Gutierrez, Wilder Zapata)
   "Camila Hernandez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
-  "Isaac Fernandez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
+  "Isaac Fernandez": "/audio/cabronyopuedo.mp3",
   "Daniel Salazar": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
   "Emanuel Garcia": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMEmanuel.mp3?alt=media&token=400d7d2c-4e82-451c-911e-9250500ff15c",
   "Luisa Gutierrez": "https://firebasestorage.googleapis.com/v0/b/verdeando-3baf2.appspot.com/o/Canciones%2FMDaniel.mp3?alt=media&token=7d8f0c1d-43a4-4086-ab3e-8277f612ca65",
@@ -146,9 +146,15 @@ export const getTeamIcon = (index: number): string => {
 };
 
 // 🎵 Helper para obtener la canción de celebración del agente
-// Primero busca en configuración dinámica, luego en valores por defecto
+// PRIORIDAD 1: Valores por defecto del código (siempre tienen prioridad)
+// PRIORIDAD 2: Configuración dinámica en localStorage
 export const getAgentCelebrationSong = (agentName: string): string => {
-  // Intentar obtener de localStorage (configuración dinámica)
+  // PRIORIDAD 1: Si hay una canción definida en el código, usarla siempre
+  if (AGENT_CELEBRATION_SONGS[agentName]) {
+    return AGENT_CELEBRATION_SONGS[agentName];
+  }
+  
+  // PRIORIDAD 2: Intentar obtener de localStorage (configuración dinámica)
   try {
     const stored = localStorage.getItem("agent_configs");
     if (stored) {
@@ -161,6 +167,6 @@ export const getAgentCelebrationSong = (agentName: string): string => {
     // Si falla, continuar con valores por defecto
   }
   
-  // Usar valores por defecto
-  return AGENT_CELEBRATION_SONGS[agentName] || DEFAULT_CELEBRATION_SONG;
+  // Fallback: canción por defecto
+  return DEFAULT_CELEBRATION_SONG;
 };

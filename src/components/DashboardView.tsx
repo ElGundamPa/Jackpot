@@ -97,6 +97,7 @@ const DashboardView = ({ teams, getTeamTheme, getTeamIcon, getAgentPhoto }: Dash
                     value={grandTotal}
                     duration={28}
                     formatter={(val) => val.toLocaleString()}
+                    playSound={true}
                   />
             </span>
           </div>

@@ -1,11 +1,67 @@
 # 🧪 Guía de Testing de Donaciones/Ventas
 
+## 🎯 Test del Total Global con Sonido
+
+El **Total Global** tiene una animación especial con sonido que ocurre **después** de la celebración del jackpot. Para testearlo:
+
+### Comando rápido:
+```bash
+npm run test:total-global [incremento]
+```
+
+### Ejemplo:
+```bash
+npm run test:total-global 5000
+```
+
+### Desde la consola del navegador:
+```javascript
+// Activar el test (activa automáticamente la animación)
+window.testTotalGlobalAnimation(5000)
+
+// O usar la función directa para activar
+window.activateTotalGlobalTest(5000)
+
+// Si solo quieres ver la información sin activar:
+window.testTotalGlobalAnimation(5000, false)
+```
+
+### Flujo Completo de la Animación:
+
+1. **Celebración del Jackpot (12 segundos)**:
+   - Aparece la pantalla de celebración con la persona que depositó
+   - Se reproduce la canción del agente
+   - Duración: 12 segundos
+
+2. **Animación del Total Global (28 segundos)**:
+   - Después de que termina el jackpot, el TOTAL GLOBAL empieza a subir
+   - El número sube desde la cantidad actual hasta la cantidad final
+   - Duración: 28 segundos
+
+3. **Audio "subida de numero.mp3"**:
+   - Se reproduce cuando **EMPIEZA** la animación del total global
+   - Volumen: 60%
+   - Duración del audio: 1.33 segundos
+   - Se repite en loop cada 1.33 segundos durante los 28 segundos
+   - Total de repeticiones: ~21 veces
+   - Se detiene cuando termina la animación del total
+
+### Características del Test:
+- ✅ **Celebración**: 12 segundos de duración
+- ✅ **Animación del Total**: 28 segundos de duración
+- 🔊 **Sonido**: "subida de numero.mp3" (1.33 segundos, volumen 60%)
+- 🔁 **Loop**: El sonido se repite ~21 veces durante la animación del total
+- ⏱️ **Sincronización**: El sonido se detiene cuando termina la animación del total
+
+---
+
 ## Animación de Números
 
-Todos los números en el dashboard tienen una animación **emocionante y dramática** que va desde el valor actual al nuevo valor en **exactamente 25 segundos**, sin importar el monto.
+Todos los números en el dashboard tienen una animación **emocionante y dramática** que va desde el valor actual al nuevo valor en **exactamente 28 segundos**, sin importar el monto.
 
 ### Características de la Animación:
-- ⏱️ **Duración épica**: 25 segundos de disfrute visual continuo
+- ⏱️ **Duración épica**: 28 segundos de disfrute visual continuo
+- 🔊 **Sonido en Total Global**: El total global incluye sonido "subida de numero.mp3" que se reproduce en loop durante toda la animación
 - ✨ **Efectos visuales dramáticos**: 
   - Brillo pulsante (glow) que intensifica durante la fase emocionante
   - Escala sutil que pulsa suavemente

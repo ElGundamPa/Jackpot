@@ -43,19 +43,30 @@ const Index = () => {
   // --- FUNCIÓN PARA PROCESAR LA COLA ---
   const processNextSale = useCallback(() => {
     // Si ya estamos procesando o no hay ventas en cola, salir
-    if (isProcessingRef.current || saleQueueRef.current.length === 0) {
+    if (isProcessingRef.current) {
+      console.log(`⏸️ Ya hay una venta en procesamiento, esperando...`);
+      return;
+    }
+    
+    if (saleQueueRef.current.length === 0) {
+      console.log(`📭 No hay ventas en la cola`);
       return;
     }
 
     const nextSale = saleQueueRef.current.shift();
-    if (!nextSale) return;
+    if (!nextSale) {
+      console.log(`❌ Error: No se pudo obtener la siguiente venta de la cola`);
+      return;
+    }
 
+    console.log(`🎬 Iniciando celebración para: ${nextSale.agent.name} - $${nextSale.amount}`);
     isProcessingRef.current = true;
 
     // Configurar datos de la celebración
     setCelebratingAgent(nextSale.agent);
     setSaleAmount(nextSale.amount);
     setJackpotActive(true);
+    console.log(`✅ Jackpot activado para ${nextSale.agent.name}`);
 
         // Detener audio anterior si existe
         if (audioRef.current) {
@@ -115,7 +126,7 @@ const Index = () => {
 
     playAudio();
 
-    // Temporizador para cerrar la celebración después de 28 segundos
+    // Temporizador para cerrar la celebración después de 12 segundos
     // Con fade out de audio en los últimos 2 segundos
     const FADE_OUT_DURATION = 2000; // 2 segundos de fade out
     const fadeOutStartTime = CONFIG.JACKPOT_DURATION - FADE_OUT_DURATION;
@@ -186,7 +197,16 @@ const Index = () => {
 
   // --- EFECTO PARA AGREGAR VENTAS A LA COLA ---
   useEffect(() => {
-    if (!saleChange) return;
+    if (!saleChange) {
+      console.log(`ℹ️ No hay saleChange en este momento`);
+      return;
+    }
+
+    console.log(`🎯 SaleChange recibido:`, {
+      agent: saleChange.agent.name,
+      amount: saleChange.amount,
+      agentId: saleChange.agent.id
+    });
 
     // Agregar venta a la cola
     saleQueueRef.current.push({
@@ -195,15 +215,19 @@ const Index = () => {
     });
 
     console.log(`📦 Venta agregada a la cola. Cola actual: ${saleQueueRef.current.length} ventas`);
+    console.log(`   Estado de procesamiento: ${isProcessingRef.current ? 'PROCESANDO' : 'LIBRE'}`);
 
     // Limpiar la venta del hook para que el polling siga funcionando
     clearSaleChange();
 
     // Si no estamos procesando nada, procesar inmediatamente
     if (!isProcessingRef.current) {
+      console.log(`🚀 Iniciando procesamiento de venta...`);
       processNextSale();
+    } else {
+      console.log(`⏳ Esperando a que termine la venta actual antes de procesar la siguiente`);
     }
-  }, [saleChange, clearSaleChange]);
+  }, [saleChange, clearSaleChange, processNextSale]);
 
   // --- EFECTO DE LIMPIEZA GLOBAL (Solo al cerrar la página) ---
   useEffect(() => {

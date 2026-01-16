@@ -64,11 +64,16 @@ export const useGoogleSheetData = (pollInterval: number = 10000) => {
       const testSaleChanges: SaleChange[] = [];
       try {
         const testSales = JSON.parse(localStorage.getItem('test_sales') || '[]');
+        console.log(`🔍 Ventas de prueba en localStorage: ${testSales.length}`);
         if (testSales.length > 0) {
           const processedSales: TestSale[] = [];
           testSales.forEach((testSale: TestSale) => {
             // Verificar si esta venta de prueba ya fue procesada para jackpot
             const wasProcessedForJackpot = processedTestSaleTimestamps.current.has(testSale.timestamp);
+            
+            console.log(`🔎 Procesando venta de prueba: ${testSale.agentName} - $${testSale.amount} (timestamp: ${testSale.timestamp})`);
+            console.log(`   - isFirstLoad: ${isFirstLoad.current}`);
+            console.log(`   - wasProcessedForJackpot: ${wasProcessedForJackpot}`);
             
             let found = false;
             let foundAgent: Agent | null = null;
@@ -82,28 +87,40 @@ export const useGoogleSheetData = (pollInterval: number = 10000) => {
                 team.total_real = (team.total_real || 0) + testSale.amount;
                 found = true;
                 foundAgent = agent;
-                console.log(`✅ Venta de prueba aplicada: ${testSale.agentName} +$${testSale.amount.toLocaleString()}`);
+                console.log(`✅ Venta de prueba aplicada al total: ${testSale.agentName} +$${testSale.amount.toLocaleString()}`);
               }
             });
             if (found && foundAgent) {
-              processedSales.push(testSale);
-              
               // Si es una venta nueva (no procesada para jackpot), agregarla a los cambios
               if (!wasProcessedForJackpot && !isFirstLoad.current) {
                 testSaleChanges.push({ agent: foundAgent, amount: testSale.amount });
                 processedTestSaleTimestamps.current.add(testSale.timestamp);
+                processedSales.push(testSale); // Solo agregar a processedSales si se procesó para jackpot
+                console.log(`🎬 Venta de prueba agregada a cambios (disparará animación): ${testSale.agentName} +$${testSale.amount.toLocaleString()}`);
+              } else if (wasProcessedForJackpot) {
+                // Si ya fue procesada para jackpot, solo actualizar el total pero no disparar animación
+                processedSales.push(testSale);
+                console.log(`ℹ️ Venta de prueba ya procesada para jackpot: ${testSale.agentName} (solo actualizando total)`);
+              } else {
+                // Primera carga - solo actualizar el total sin disparar animación
+                // NO agregar a processedSales para que se pueda procesar después
+                console.log(`⏸️ Primera carga - venta de prueba aplicada sin animación: ${testSale.agentName} (se procesará en el siguiente fetch)`);
               }
             } else {
               console.warn(`⚠️ Agente "${testSale.agentName}" no encontrado en los datos de Google Sheets`);
             }
           });
           
-          // Remover solo las ventas procesadas
+          // Remover solo las ventas que fueron procesadas para jackpot (para permitir re-testing)
+          // Mantener las ventas que no se procesaron para jackpot en localStorage
           if (processedSales.length > 0) {
             const remainingSales = testSales.filter((sale: TestSale) => 
               !processedSales.some(ps => ps.timestamp === sale.timestamp)
             );
             localStorage.setItem('test_sales', JSON.stringify(remainingSales));
+            if (remainingSales.length < testSales.length) {
+              console.log(`🗑️ ${testSales.length - remainingSales.length} venta(s) de prueba procesada(s) y removida(s) de localStorage`);
+            }
           }
         }
       } catch (e) {
@@ -133,17 +150,29 @@ export const useGoogleSheetData = (pollInterval: number = 10000) => {
       // Lógica de detección de Jackpot (buscar en allAgents, no en teamsData reorganizado)
       const detectedChanges: SaleChange[] = [];
       
+      // Log para debugging
+      console.log(`🔍 Verificando nuevas ventas: ${newSalesData.length} ventas encontradas`);
+      console.log(`📊 Estado: isFirstLoad=${isFirstLoad.current}, allAgents=${allAgents.length}`);
+      
       // Procesamos las ventas recientes
       if (newSalesData.length > 0) {
         for (const sale of newSalesData) {
+          // Normalizar nombres para comparación
+          const normalizedSaleName = sale.agentName.toLowerCase().trim();
+          
           // ID Único: Agente + Fecha exacta (incluyendo hora si la hay) + Valor
           // NO incluir timestamp aquí porque causaría que la misma venta se marque como nueva en cada fetch
-          const saleId = `${sale.agentName}-${sale.entryDate}-${sale.value}`;
+          const saleId = `${normalizedSaleName}-${sale.entryDate}-${sale.value}`;
+          
+          console.log(`🔎 Procesando venta: ${sale.agentName} - ${sale.entryDate} - $${sale.value}`);
+          console.log(`   SaleId: ${saleId}`);
+          console.log(`   Ya procesada: ${processedSalesRef.current.has(saleId)}`);
           
           if (!processedSalesRef.current.has(saleId)) {
             // Es una venta nueva que no hemos visto en esta sesión
             // Guardamos el timestamp de cuando se agregó para poder limpiar los más antiguos
             processedSalesRef.current.set(saleId, Date.now());
+            console.log(`✅ Venta nueva detectada: ${sale.agentName} - $${sale.value}`);
             
             // Limitar el tamaño del Map para evitar memory leak
             if (processedSalesRef.current.size > MAX_PROCESSED_SALES) {
@@ -161,17 +190,33 @@ export const useGoogleSheetData = (pollInterval: number = 10000) => {
             // Buscar en allAgents para encontrar el agente sin importar en qué equipo esté
             if (!isFirstLoad.current) {
               const foundAgent = allAgents.find(
-                a => a.name.toLowerCase().trim() === sale.agentName.toLowerCase().trim()
+                a => a.name.toLowerCase().trim() === normalizedSaleName
               );
               
-              if (foundAgent && sale.value > 0) {
-                // ¡Encontramos al ganador!
-                detectedChanges.push({ agent: foundAgent, amount: sale.value });
-                // NO hacer break, continuar procesando las demás ventas nuevas
+              if (foundAgent) {
+                console.log(`🎯 Agente encontrado: ${foundAgent.name} (ID: ${foundAgent.id})`);
+                
+                if (sale.value > 0) {
+                  // ¡Encontramos al ganador!
+                  console.log(`🎉 ¡JACKPOT! Agregando celebración para ${foundAgent.name} con $${sale.value}`);
+                  detectedChanges.push({ agent: foundAgent, amount: sale.value });
+                  // NO hacer break, continuar procesando las demás ventas nuevas
+                } else {
+                  console.warn(`⚠️ Valor de venta es 0 o negativo para ${foundAgent.name}`);
+                }
+              } else {
+                console.warn(`❌ Agente "${sale.agentName}" no encontrado en allAgents`);
+                console.log(`   Agentes disponibles:`, allAgents.map(a => a.name).join(', '));
               }
+            } else {
+              console.log(`⏸️ Carga inicial - saltando detección de jackpot para ${sale.agentName}`);
             }
+          } else {
+            console.log(`⏭️ Venta ya procesada anteriormente: ${sale.agentName}`);
           }
         }
+      } else {
+        console.log(`📭 No hay nuevas ventas en este momento`);
       }
       
       // Reorganizar agentes según la configuración guardada
@@ -229,21 +274,26 @@ export const useGoogleSheetData = (pollInterval: number = 10000) => {
       // Desactivamos el flag de primera carga después del primer proceso exitoso
       if (isFirstLoad.current) {
         isFirstLoad.current = false;
-        console.log("Carga inicial completada. Sistema listo para nuevas ventas.");
+        console.log("✅ Carga inicial completada. Sistema listo para nuevas ventas.");
       } else {
         // Combinar ventas de prueba con ventas detectadas de Google Sheets
         const allChanges = [...detectedChanges, ...testSaleChanges];
         
+        console.log(`📦 Cambios detectados: ${detectedChanges.length} de Google Sheets, ${testSaleChanges.length} de prueba`);
+        
         if (allChanges.length > 0) {
-          console.log(`¡${allChanges.length} nueva(s) venta(s) detectada(s)!`, allChanges);
+          console.log(`🎊 ¡${allChanges.length} nueva(s) venta(s) detectada(s)!`, allChanges);
           
           // Procesar todas las ventas nuevas con un pequeño delay entre cada una
           // para evitar conflictos de estado y asegurar que la cola funcione correctamente
           allChanges.forEach((change, index) => {
             setTimeout(() => {
+              console.log(`🚀 Disparando animación para ${change.agent.name} con $${change.amount}`);
               setSaleChange(change);
             }, index * 100); // 100ms de delay entre cada venta
           });
+        } else {
+          console.log(`ℹ️ No hay cambios nuevos para procesar en este momento`);
         }
       }
       
@@ -275,9 +325,17 @@ export const useGoogleSheetData = (pollInterval: number = 10000) => {
   // Escuchar eventos de ventas de prueba desde la consola
   useEffect(() => {
     const handleTestSale = () => {
+      // Asegurar que no estamos en primera carga cuando se procesa la venta de prueba
+      if (isFirstLoad.current) {
+        console.log('⚠️ Primera carga aún activa, desactivando para procesar venta de prueba...');
+        isFirstLoad.current = false;
+      }
       // Forzar refetch inmediato cuando se simula una venta
       console.log('🔄 Refetch inmediato por venta de prueba...');
-      fetchData();
+      // Pequeño delay para asegurar que localStorage se haya actualizado
+      setTimeout(() => {
+        fetchData();
+      }, 100);
     };
 
     const handleClearTestSales = () => {
